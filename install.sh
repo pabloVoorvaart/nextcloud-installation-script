@@ -18,6 +18,7 @@ fi
 apt-get update && apt-get upgrade -y
 }
 
+####
 ## installing lemp ##
 if service --status-all | grep -Fq 'nginx';
    then
