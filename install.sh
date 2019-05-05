@@ -52,8 +52,7 @@ fi
 if service --status-all | grep -Fq 'php7.2-fpm'; then
   printf "php is already installed\\n\\n"
 else
-  sudo apt install php7.2 php7.2-fpm php7.2-mysql php-common php7.2-cli php7.2-common \
-     php7.2-opcache php7.2-readline php7.2-xml php7.2-gd \ 
+  sudo apt install php7.2 php7.2-fpm php7.2-mysql php-common php7.2-cli php7.2-common php7.2-opcache php7.2-readline php7.2-xml php7.2-gd \
     php-imagick  php7.2-gd php7.2-json php7.2-curl  php7.2-zip php7.2-xml \
     php7.2-mbstring php7.2-bz2 php7.2-intl -y;
     
