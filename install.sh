@@ -15,7 +15,7 @@ if [ "$EUID" -ne 0 ]
 fi
 
 {
-apt-get update && apt-get upgrade
+apt-get update && apt-get upgrade -y
 }
 
 ## installing lemp ##
