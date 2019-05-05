@@ -7,7 +7,7 @@ DATABASE_NAME="nextcloud"
 DATABASE_USER="admin"
 DATABASE_PASSWORD="dwadawdwdadw"
 INSTALLATION_DIR="/usr/share/nginx/nextcloud/"
-NGINX_CONFIG="/etc/nginx/conf.d/nextcloud"
+NGINX_CONFIG="/etc/nginx/conf.d/nextcloud.conf"
 
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
@@ -32,7 +32,7 @@ else
   printf "Enter hostname for nextcloud:";
   read hostname;
   printf hostname;
-  sed 's/nextcloud.your-domain.com/'$hostname'/' $NGINX_CONFIG;
+  sed -i 's/nextcloud.your-domain.com/'$hostname'/' $NGINX_CONFIG;
   sudo service nginx reload;
   
 fi
