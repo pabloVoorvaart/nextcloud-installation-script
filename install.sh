@@ -23,7 +23,7 @@ fi
 
 {
 apt-get update && apt-get upgrade -y
-}
+} > /dev/null 2>&1
 
 ########################
 ## INSTALL LEMP STACK ##
@@ -35,7 +35,7 @@ if service --status-all | grep -Fq 'nginx';
    then
         printf "nginx already exists\\n"
 else  
-  apt install nginx -y;
+  apt install nginx -y /dev/null 2>&1;
   systemctl enable nginx;
   systemctl status nginx;
   chown www-data /usr/share/nginx/html -R;
@@ -51,7 +51,7 @@ printf "Installing MariaDB...\\n\\n"
 if service --status-all | grep -Fq 'mysql'; then
     printf "mysql is already installed\\n\\n"
 else
-  sudo apt install mariadb-server mariadb-client -y ;
+  sudo apt install mariadb-server mariadb-client -y /dev/null 2>&1;
   sudo systemctl status mysql; 
   sudo systemctl start mysql && sudo systemctl enable mysql;
   #sudo mysql_secure_installation;
@@ -65,7 +65,7 @@ if service --status-all | grep -Fq 'php7.2-fpm'; then
 else
   sudo apt install php7.2 php7.2-fpm php7.2-mysql php-common php7.2-cli php7.2-common php7.2-opcache php7.2-readline php7.2-xml php7.2-gd \
     php-imagick  php7.2-gd php7.2-json php7.2-curl  php7.2-zip php7.2-xml \
-    php7.2-mbstring php7.2-bz2 php7.2-intl -y;
+    php7.2-mbstring php7.2-bz2 php7.2-intl -y /dev/null 2>&1;
     
   sudo systemctl start php7.2-fpm;
   sudo systemctl enable php7.2-fpm;
@@ -76,7 +76,7 @@ fi
 if service --status-all | grep -Fq 'redis'; then
   printf "redis is already installed\\n\\n"
 else
-  sudo apt install php-apcu redis-server php-redis -y;
+  sudo apt install php-apcu redis-server php-redis -y /dev/null 2>&1;
   sudo systemctl start red
 
 ##########################
@@ -92,7 +92,8 @@ else
   sudo apt install unzip
   sudo unzip nextcloud-16.0.0.zip -d /usr/share/nginx/
   sudo chown www-data:www-data $INSTALLATION_DIR -R
-  
+fi
+
 # Create an initial configuration file.
 instanceid=oc$(echo $PRIMARY_HOSTNAME | sha1sum | fold -w 10 | head -n 1)
 cat > $CONFIGFILE <<EOF;
