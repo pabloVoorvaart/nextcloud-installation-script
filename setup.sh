@@ -1,7 +1,9 @@
-#!/bin/bash
+#!/bin/sh
+# Nextcloud
+##########################
 
-#########################
-##     VARIABLES       ##
+#source setup/functions.sh # load our functions
+#source /etc/mailinabox.conf # load global vars
 #########################
 DATABASE_NAME="nextcloud"
 DATABASE_USER="admin"
@@ -9,92 +11,10 @@ DATABASE_PASSWORD="dwadawdwdadw"
 INSTALLATION_DIR="/usr/share/nginx/nextcloud/"
 NGINX_CONFIG="/etc/nginx/conf.d/nextcloud.conf"
 NEXTCLOUD_CONFIG="$ISNTALLATION_DIR/config/config.php"
-HOSTNAME=""
+HOSTNAME="test.pablovoorvaart.me"
 
-
-#################
-## INIT SCRIPT ##
-################
-
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
-  exit
-fi
-
-{
-apt-get update && apt-get upgrade -y
-}
-
-########################
-## INSTALL LEMP STACK ##
-########################
-
-#Install nginx
-printf "Installing MariaDB...\\n\\n"
-if service --status-all | grep -Fq 'nginx';
-   then
-        printf "nginx already exists\\n"
-else  
-  apt install nginx -y;
-  systemctl enable nginx;
-  systemctl status nginx;
-  chown www-data /usr/share/nginx/html -R;
-  mkdir nextcloud;
-  cp nginx.conf $NGINX_CONFIG;
-  sed -i 's/nextcloud.your-domain.com/'$HOSTNAME'/' $NGINX_CONFIG;
-  sudo service nginx reload;
-  
-fi
-
-#Install mariadb
-printf "Installing MariaDB...\\n\\n"
-if service --status-all | grep -Fq 'mysql'; then
-    printf "mysql is already installed\\n\\n"
-else
-  sudo apt install mariadb-server mariadb-client -y ;
-  sudo systemctl status mysql; 
-  sudo systemctl start mysql && sudo systemctl enable mysql;
-  #sudo mysql_secure_installation;
-  sudo mysql -u root -e "create database "$DATABASE_NAME"";
-  sudo mysql -u root -e "GRANT ALL PRIVILEGES ON "$DATABASE_NAME".* TO '"$DATABASE_USER"'@'localhost' IDENTIFIED BY '"$DATABASE_PASSWORD"'";
-fi
-
-## installing php
-if service --status-all | grep -Fq 'php7.2-fpm'; then
-  printf "php is already installed\\n\\n"
-else
-  sudo apt install php7.2 php7.2-fpm php7.2-mysql php-common php7.2-cli php7.2-common php7.2-opcache php7.2-readline php7.2-xml php7.2-gd \
-    php-imagick  php7.2-gd php7.2-json php7.2-curl  php7.2-zip php7.2-xml \
-    php7.2-mbstring php7.2-bz2 php7.2-intl -y;
-    
-  sudo systemctl start php7.2-fpm;
-  sudo systemctl enable php7.2-fpm;
-  systemctl status php7.2-fpm;
-fi
-
-# Install redis
-if service --status-all | grep -Fq 'redis'; then
-  printf "redis is already installed\\n\\n"
-else
-  sudo apt install php-apcu redis-server php-redis -y;
-  sudo systemctl start red
-
-##########################
-## INSTALLING NEXTCLOUD ##
-##########################
-
-if [ -d $INSTALLATION_DIR ]; then
-  printf "Nextcloud is already installed\\n\\n"
-# Control will enter here if $DIRECTORY exists.
-else
-  # installing nextcloud
-  wget https://download.nextcloud.com/server/releases/nextcloud-16.0.0.zip
-  sudo apt install unzip
-  sudo unzip nextcloud-16.0.0.zip -d /usr/share/nginx/
-  sudo chown www-data:www-data $INSTALLATION_DIR -R
-  
 # Create an initial configuration file.
-instanceid=oc$(echo $PRIMARY_HOSTNAME | sha1sum | fold -w 10 | head -n 1)
+instanceid=oc$(echo $HOSTNAME | sha1sum | fold -w 10 | head -n 1)
 cat > $CONFIGFILE <<EOF;
 <?php
 \$CONFIG = array (
@@ -211,6 +131,4 @@ chown -R $UID:$GID /config /data
 # and calendar apps are the extensions we really care about here.
 if [[ ! -z "$ADMIN_USER"  ]]; then
   occ app:disable firstrunwizard
-fi
-
 fi
