@@ -23,7 +23,7 @@ fi
 
 {
 apt-get update && apt-get upgrade -y
-} > /dev/null 2>&1
+} > /dev/null
 
 ########################
 ## INSTALL LEMP STACK ##
@@ -35,7 +35,7 @@ if service --status-all | grep -Fq 'nginx';
    then
         printf "nginx already exists\\n"
 else  
-  apt install nginx -y /dev/null 2>&1;
+  apt install nginx -y /dev/null;
   systemctl enable nginx;
   systemctl status nginx;
   chown www-data /usr/share/nginx/html -R;
@@ -51,7 +51,7 @@ printf "Installing MariaDB...\\n\\n"
 if service --status-all | grep -Fq 'mysql'; then
     printf "mysql is already installed\\n\\n"
 else
-  sudo apt install mariadb-server mariadb-client -y /dev/null 2>&1;
+  sudo apt install mariadb-server mariadb-client -y /dev/null;
   sudo systemctl status mysql; 
   sudo systemctl start mysql && sudo systemctl enable mysql;
   #sudo mysql_secure_installation;
