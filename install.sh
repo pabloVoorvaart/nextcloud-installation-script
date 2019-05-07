@@ -80,7 +80,7 @@ if service --status-all | grep -Fq 'redis'; then
 else
   sudo apt install php-apcu redis-server php-redis -y > /dev/null 2>&1;
   sudo service redis start;
-
+fi
 ##########################
 ## INSTALLING NEXTCLOUD ##
 ##########################
@@ -94,7 +94,6 @@ else
   sudo apt install unzip
   sudo unzip nextcloud-16.0.0.zip -d /usr/share/nginx/
   sudo chown www-data:www-data $INSTALLATION_DIR -R
-fi
 
 # Create an initial configuration file.
 instanceid=oc$(echo $HOSTNAME | sha1sum | fold -w 10 | head -n 1)
@@ -169,33 +168,10 @@ echo "Starting automatic configuration..."
 (cd $INSTALLATION_DIR; php index.php &>/dev/null)
 echo "Automatic configuration finished."
 
-# Update config.php.
-# * trusted_domains is reset to localhost by autoconfig starting with ownCloud 8.1.1,
-#   so set it here. It also can change if the box's PRIMARY_HOSTNAME changes, so
-#   this will make sure it has the right value.
-# * Some settings weren't included in previous versions of Mail-in-a-Box.
-# * We need to set the timezone to the system timezone to allow fail2ban to ban
-#   users within the proper timeframe
-# * We need to set the logdateformat to something that will work correctly with fail2ban
-# Use PHP to read the settings file, modify it, and write out the new settings array.
-
-CONFIG_TEMP=$(/bin/mktemp)
-php <<EOF > $CONFIG_TEMP && mv $CONFIG_TEMP $CONFIGFILE
-<?php
-include("/config/config.php");
-//\$CONFIG['memcache.local'] = '\\OC\\Memcache\\Memcached';
-\$CONFIG['mail_from_address'] = 'administrator'; # just the local part, matches our master administrator address
-\$CONFIG['logtimezone'] = '$TZ';
-\$CONFIG['logdateformat'] = 'Y-m-d H:i:s';
-echo "<?php\n\\\$CONFIG = ";
-var_export(\$CONFIG);
-echo ";";
-?>
-EOF
 
 sed -i "s/localhost/$DOMAIN/g" $NEXTCLOUD_CONFIG/config.php
 
-chown -R $UID:$GID $NEXTCLOUD_CONFIG $INSTALLATION_DIR/data
+chown -R www-data:www-data $NEXTCLOUD_CONFIG $INSTALLATION_DIR/data
 # Enable/disable apps. Note that this must be done after the ownCloud setup.
 # The firstrunwizard gave Josh all sorts of problems, so disabling that.
 # user_external is what allows ownCloud to use IMAP for login. The contacts
