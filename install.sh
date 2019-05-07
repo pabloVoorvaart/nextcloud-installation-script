@@ -6,16 +6,16 @@
 DATABASE_NAME="nextcloud"
 DATABASE_USER="admin"
 DATABASE_PASSWORD="dwadawdwdadw"
-INSTALLATION_DIR="/usr/share/nginx/nextcloud/"
-NGINX_CONFIG="/etc/nginx/conf.d/nextcloud.conf"
-NEXTCLOUD_CONFIG="$ISNTALLATION_DIR/config/config.php"
+INSTALLATION_DIR=/usr/share/nginx/nextcloud/
+NGINX_CONFIG=/etc/nginx/conf.d/nextcloud.conf
+NEXTCLOUD_CONFIG=$INSTALLATION_DIR/config/
 HOSTNAME="localhost"
 
 
 #################
 ## INIT SCRIPT ##
 ################
-
+printf "Starting installation scprit..."
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
   exit
@@ -30,10 +30,10 @@ apt-get update && apt-get upgrade -y
 ########################
 
 #Install nginx
-printf "Installing MariaDB...\\n\\n"
+printf "Installing Nginx...\\n"
 if service --status-all | grep -Fq 'nginx';
    then
-        printf "nginx already exists\\n"
+        printf "nginx already exists\\n\\n"
 else  
   apt install nginx -y > /dev/null;
   #service nginx enable;
@@ -48,7 +48,7 @@ else
 fi
 
 #Install mariadb
-printf "Installing MariaDB...\\n\\n"
+printf "Installing MariaDB...\\n"
 if service --status-all | grep -Fq 'mysql'; then
     printf "mysql is already installed\\n\\n"
 else
@@ -66,7 +66,7 @@ if service --status-all | grep -Fq 'php7.2-fpm'; then
 else
   sudo apt install php7.2 php7.2-fpm php7.2-mysql php-common php7.2-cli php7.2-common php7.2-opcache php7.2-readline php7.2-xml php7.2-gd \
     php-imagick  php7.2-gd php7.2-json php7.2-curl  php7.2-zip php7.2-xml \
-    php7.2-mbstring php7.2-bz2 php7.2-intl -y /dev/null 2>&1;
+    php7.2-mbstring php7.2-bz2 php7.2-intl -y > /dev/null 2>&1;
     
   sudo service php7.2-fpm start;
   sudo service php7.2-fpm status;
@@ -76,7 +76,7 @@ fi
 if service --status-all | grep -Fq 'redis'; then
   printf "redis is already installed\\n\\n"
 else
-  sudo apt install php-apcu redis-server php-redis -y /dev/null 2>&1;
+  sudo apt install php-apcu redis-server php-redis -y > /dev/null 2>&1;
   sudo service redis start;
 
 ##########################
@@ -95,8 +95,8 @@ else
 fi
 
 # Create an initial configuration file.
-instanceid=oc$(echo $PRIMARY_HOSTNAME | sha1sum | fold -w 10 | head -n 1)
-cat > $CONFIGFILE <<EOF;
+instanceid=oc$(echo $HOSTNAME | sha1sum | fold -w 10 | head -n 1)
+cat > $NEXTCLOUD_CONFIG/config.php <<EOF;
 <?php
 \$CONFIG = array (
   'datadirectory' => '/data',
@@ -122,7 +122,7 @@ EOF
 # when the install script is run. Make an administrator account
 # here or else the install can't finish.
 adminpassword=$(dd if=/dev/urandom bs=1 count=40 2>/dev/null | sha1sum | fold -w 30 | head -n 1)
-cat > /nextcloud/config/autoconfig.php <<EOF;
+cat > $NEXTCLOUD_CONFIG/autoconfig.php <<EOF;
 <?php
 \$AUTOCONFIG = array (
   # storage/database
