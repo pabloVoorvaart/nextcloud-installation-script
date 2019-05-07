@@ -3,9 +3,11 @@
 #########################
 ##     VARIABLES       ##
 #########################
-DATABASE_NAME="nextcloud"
-DATABASE_USER="admin"
-DATABASE_PASSWORD="dwadawdwdadw"
+DB_NAME="nextcloud"
+DB_USER="admin"
+DB_PASSWORD="dwadawdwdadw"
+DB_TYPE="mysql"
+
 INSTALLATION_DIR=/usr/share/nginx/nextcloud/
 NGINX_CONFIG=/etc/nginx/conf.d/nextcloud.conf
 NEXTCLOUD_CONFIG=$INSTALLATION_DIR/config/
@@ -100,18 +102,6 @@ cat > $NEXTCLOUD_CONFIG/config.php <<EOF;
 <?php
 \$CONFIG = array (
   'datadirectory' => '/data',
-  "apps_paths" => array (
-      0 => array (
-              "path"     => "/nextcloud/apps",
-              "url"      => "/apps",
-              "writable" => false,
-      ),
-      1 => array (
-              "path"     => "/apps2",
-              "url"      => "/apps2",
-              "writable" => true,
-      ),
-  ),
   'memcache.local' => '\OC\Memcache\APCu',
   'instanceid' => '$instanceid',
 );
@@ -135,21 +125,21 @@ cat > $NEXTCLOUD_CONFIG/autoconfig.php <<EOF;
   'dbtableprefix' => 'oc_',
 EOF
 if [[ ! -z "$ADMIN_USER"  ]]; then
-  cat >> /nextcloud/config/autoconfig.php <<EOF;
+  cat >> $NEXTCLOUD_CONFIG/autoconfig.php <<EOF;
   # create an administrator account with a random password so that
   # the user does not have to enter anything on first load of ownCloud
   'adminlogin'    => '${ADMIN_USER}',
   'adminpass'     => '${ADMIN_PASSWORD}',
 EOF
 fi
-cat >> /nextcloud/config/autoconfig.php <<EOF;
+cat >> $NEXTCLOUD_CONFIG/autoconfig.php <<EOF;
 );
 ?>
 EOF
 
 # Put S3 config into it's own config file
 if [[ ! -z "$DATASTORE_BUCKET"  ]]; then
-  cat >> /nextcloud/config/s3.config.php <<EOF;
+  cat >> $NEXTCLOUD_CONFIG/s3.config.php <<EOF;
 <?php
 \$CONFIG = array (
   # Setup S3 as a backend for primary storage
@@ -176,7 +166,7 @@ echo "Starting automatic configuration..."
 # Execute ownCloud's setup step, which creates the ownCloud database.
 # It also wipes it if it exists. And it updates config.php with database
 # settings and deletes the autoconfig.php file.
-(cd /nextcloud; php index.php &>/dev/null)
+(cd $INSTALLATION_DIR; php index.php &>/dev/null)
 echo "Automatic configuration finished."
 
 # Update config.php.
@@ -203,9 +193,9 @@ echo ";";
 ?>
 EOF
 
-sed -i "s/localhost/$DOMAIN/g" /config/config.php
+sed -i "s/localhost/$DOMAIN/g" $NEXTCLOUD_CONFIG/config.php
 
-chown -R $UID:$GID /config /data
+chown -R $UID:$GID $NEXTCLOUD_CONFIG $INSTALLATION_DIR/data
 # Enable/disable apps. Note that this must be done after the ownCloud setup.
 # The firstrunwizard gave Josh all sorts of problems, so disabling that.
 # user_external is what allows ownCloud to use IMAP for login. The contacts
