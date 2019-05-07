@@ -9,7 +9,7 @@ DATABASE_PASSWORD="dwadawdwdadw"
 INSTALLATION_DIR="/usr/share/nginx/nextcloud/"
 NGINX_CONFIG="/etc/nginx/conf.d/nextcloud.conf"
 NEXTCLOUD_CONFIG="$ISNTALLATION_DIR/config/config.php"
-HOSTNAME=""
+HOSTNAME="localhost"
 
 
 #################
@@ -35,9 +35,10 @@ if service --status-all | grep -Fq 'nginx';
    then
         printf "nginx already exists\\n"
 else  
-  apt install nginx -y /dev/null;
-  systemctl enable nginx;
-  systemctl status nginx;
+  apt install nginx -y > /dev/null;
+  #service nginx enable;
+  service nginx status;
+  service nginx start;
   chown www-data /usr/share/nginx/html -R;
   mkdir nextcloud;
   cp nginx.conf $NGINX_CONFIG;
@@ -51,9 +52,9 @@ printf "Installing MariaDB...\\n\\n"
 if service --status-all | grep -Fq 'mysql'; then
     printf "mysql is already installed\\n\\n"
 else
-  sudo apt install mariadb-server mariadb-client -y /dev/null;
-  sudo systemctl status mysql; 
-  sudo systemctl start mysql && sudo systemctl enable mysql;
+  sudo apt install mariadb-server mariadb-client -y > /dev/null;
+  sudo service mysql status; 
+  sudo service mysql start;
   #sudo mysql_secure_installation;
   sudo mysql -u root -e "create database "$DATABASE_NAME"";
   sudo mysql -u root -e "GRANT ALL PRIVILEGES ON "$DATABASE_NAME".* TO '"$DATABASE_USER"'@'localhost' IDENTIFIED BY '"$DATABASE_PASSWORD"'";
@@ -67,9 +68,8 @@ else
     php-imagick  php7.2-gd php7.2-json php7.2-curl  php7.2-zip php7.2-xml \
     php7.2-mbstring php7.2-bz2 php7.2-intl -y /dev/null 2>&1;
     
-  sudo systemctl start php7.2-fpm;
-  sudo systemctl enable php7.2-fpm;
-  systemctl status php7.2-fpm;
+  sudo service php7.2-fpm start;
+  sudo service php7.2-fpm status;
 fi
 
 # Install redis
@@ -77,7 +77,7 @@ if service --status-all | grep -Fq 'redis'; then
   printf "redis is already installed\\n\\n"
 else
   sudo apt install php-apcu redis-server php-redis -y /dev/null 2>&1;
-  sudo systemctl start red
+  sudo service redis start;
 
 ##########################
 ## INSTALLING NEXTCLOUD ##
