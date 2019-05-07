@@ -166,13 +166,35 @@ echo "Starting automatic configuration..."
 # Execute ownCloud's setup step, which creates the ownCloud database.
 # It also wipes it if it exists. And it updates config.php with database
 # settings and deletes the autoconfig.php file.
-(cd $INSTALLATION_DIR; php index.php &>/dev/null)
+(cd $INSTALLATION_DIR; php index.php)
 echo "Automatic configuration finished."
+
+# Update config.php.
+# * trusted_domains is reset to localhost by autoconfig starting with ownCloud 8.1.1,
+#   so set it here. It also can change if the box's PRIMARY_HOSTNAME changes, so
+#   this will make sure it has the right value.
+# * Some settings weren't included in previous versions of Mail-in-a-Box.
+# * We need to set the timezone to the system timezone to allow fail2ban to ban
+#   users within the proper timeframe
+# * We need to set the logdateformat to something that will work correctly with fail2ban
+# Use PHP to read the settings file, modify it, and write out the new settings array.
+
+CONFIG_TEMP=$(/bin/mktemp)
+php <<EOF > $CONFIG_TEMP && mv $CONFIG_TEMP $NEXTCLOUD_CONFIG/config.php
+<?php
+include("/config/config.php");
+//\$CONFIG['memcache.local'] = '\\OC\\Memcache\\Memcached';
+\$CONFIG['mail_from_address'] = 'administrator'; # just the local part, matches our master administrator address
+\$CONFIG['logtimezone'] = '$TZ';
+\$CONFIG['logdateformat'] = 'Y-m-d H:i:s';
+echo "<?php\n\\\$CONFIG = ";
+var_export(\$CONFIG);
+echo ";";
+?>
+EOF
 
 
 sed -i "s/localhost/$DOMAIN/g" $NEXTCLOUD_CONFIG/config.php
-mkdir $INSTALLATION_DIR/data
-chown -R www-data:www-data $NEXTCLOUD_CONFIG $INSTALLATION_DIR/data
 # Enable/disable apps. Note that this must be done after the ownCloud setup.
 # The firstrunwizard gave Josh all sorts of problems, so disabling that.
 # user_external is what allows ownCloud to use IMAP for login. The contacts
