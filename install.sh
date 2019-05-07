@@ -8,6 +8,9 @@ DB_USER="admin"
 DB_PASSWORD="dwadawdwdadw"
 DB_TYPE="mysql"
 
+ADMIN_USER="admin"
+ADMIN_PASSWORD="ramallosa8611"
+
 INSTALLATION_DIR=/usr/share/nginx/nextcloud
 NGINX_CONFIG=/etc/nginx/conf.d/nextcloud.conf
 NEXTCLOUD_CONFIG=$INSTALLATION_DIR/config/
@@ -96,17 +99,6 @@ else
   sudo chown www-data:www-data $INSTALLATION_DIR -R
 fi
 
-# Create an initial configuration file.
-instanceid=oc$(echo $HOSTNAME | sha1sum | fold -w 10 | head -n 1)
-cat > $NEXTCLOUD_CONFIG/config.php <<EOF;
-<?php
-\$CONFIG = array (
-  'datadirectory' => '/data',
-  'memcache.local' => '\OC\Memcache\APCu',
-  'instanceid' => '$instanceid',
-);
-?>
-EOF
 
 # Create an auto-configuration file to fill in database settings
 # when the install script is run. Make an administrator account
@@ -137,30 +129,6 @@ cat >> $NEXTCLOUD_CONFIG/autoconfig.php <<EOF;
 ?>
 EOF
 
-# Put S3 config into it's own config file
-if [[ ! -z "$DATASTORE_BUCKET"  ]]; then
-  cat >> $NEXTCLOUD_CONFIG/s3.config.php <<EOF;
-<?php
-\$CONFIG = array (
-  # Setup S3 as a backend for primary storage
-  'objectstore' => array (
-    'class' => 'OC\\Files\\ObjectStore\\S3',
-    'arguments' => array (
-      'bucket' => '${DATASTORE_BUCKET}',
-      'autocreate' => false,
-      'key' => '${DATASTORE_KEY}',
-      'secret' => '${DATASTORE_SECRET}',
-      'hostname' => '${DATASTORE_HOST}',
-      'port' => '${DATASTORE_PORT:-443}',
-      'use_ssl' => true,
-      // required for some non amazon s3 implementations
-      'use_path_style' => %{DATASTORE_USE_PATH_STYLE},
-    ),
-  ),
-);
-?>
-EOF
-fi
 
 echo "Starting automatic configuration..."
 # Execute ownCloud's setup step, which creates the ownCloud database.
@@ -168,30 +136,6 @@ echo "Starting automatic configuration..."
 # settings and deletes the autoconfig.php file.
 (cd $INSTALLATION_DIR; php index.php)
 echo "Automatic configuration finished."
-
-# Update config.php.
-# * trusted_domains is reset to localhost by autoconfig starting with ownCloud 8.1.1,
-#   so set it here. It also can change if the box's PRIMARY_HOSTNAME changes, so
-#   this will make sure it has the right value.
-# * Some settings weren't included in previous versions of Mail-in-a-Box.
-# * We need to set the timezone to the system timezone to allow fail2ban to ban
-#   users within the proper timeframe
-# * We need to set the logdateformat to something that will work correctly with fail2ban
-# Use PHP to read the settings file, modify it, and write out the new settings array.
-
-CONFIG_TEMP=$(/bin/mktemp)
-php <<EOF > $CONFIG_TEMP && mv $CONFIG_TEMP $NEXTCLOUD_CONFIG/config.php
-<?php
-include("/config/config.php");
-//\$CONFIG['memcache.local'] = '\\OC\\Memcache\\Memcached';
-\$CONFIG['mail_from_address'] = 'administrator'; # just the local part, matches our master administrator address
-\$CONFIG['logtimezone'] = '$TZ';
-\$CONFIG['logdateformat'] = 'Y-m-d H:i:s';
-echo "<?php\n\\\$CONFIG = ";
-var_export(\$CONFIG);
-echo ";";
-?>
-EOF
 
 
 sed -i "s/localhost/$DOMAIN/g" $NEXTCLOUD_CONFIG/config.php
