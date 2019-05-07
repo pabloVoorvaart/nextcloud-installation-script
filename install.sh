@@ -8,11 +8,11 @@ DB_USER="admin"
 DB_PASSWORD="dwadawdwdadw"
 DB_TYPE="mysql"
 
-INSTALLATION_DIR=/usr/share/nginx/nextcloud/
+INSTALLATION_DIR=/usr/share/nginx/nextcloud
 NGINX_CONFIG=/etc/nginx/conf.d/nextcloud.conf
 NEXTCLOUD_CONFIG=$INSTALLATION_DIR/config/
 HOSTNAME="localhost"
-
+DATASTORE_BUCKET="test"
 
 #################
 ## INIT SCRIPT ##
@@ -94,6 +94,7 @@ else
   sudo apt install unzip
   sudo unzip nextcloud-16.0.0.zip -d /usr/share/nginx/
   sudo chown www-data:www-data $INSTALLATION_DIR -R
+fi
 
 # Create an initial configuration file.
 instanceid=oc$(echo $HOSTNAME | sha1sum | fold -w 10 | head -n 1)
@@ -170,7 +171,7 @@ echo "Automatic configuration finished."
 
 
 sed -i "s/localhost/$DOMAIN/g" $NEXTCLOUD_CONFIG/config.php
-
+mkdir $INSTALLATION_DIR/data
 chown -R www-data:www-data $NEXTCLOUD_CONFIG $INSTALLATION_DIR/data
 # Enable/disable apps. Note that this must be done after the ownCloud setup.
 # The firstrunwizard gave Josh all sorts of problems, so disabling that.
@@ -180,4 +181,3 @@ if [[ ! -z "$ADMIN_USER"  ]]; then
   occ app:disable firstrunwizard
 fi
 
-fi
