@@ -9,13 +9,13 @@ DB_PASSWORD="dwadawdwdadw"
 DB_TYPE="mysql"
 
 ADMIN_USER="admin"
-ADMIN_PASSWORD="ramallosa8611"
+ADMIN_PASSWORD="pepitogrillo"
 
 INSTALLATION_DIR=/usr/share/nginx/nextcloud
 NGINX_CONFIG=/etc/nginx/conf.d/nextcloud.conf
 NEXTCLOUD_CONFIG=$INSTALLATION_DIR/config/
 HOSTNAME="localhost"
-#DATASTORE_BUCKET="test"
+DATASTORE_BUCKET="nextcloudev"
 
 #################
 ## INIT SCRIPT ##
@@ -54,7 +54,7 @@ else
   # sudo service mysql status; 
   sudo service mysql start;
   #sudo mysql_secure_installation;
-  printf "\\Mysql installed succesfully!\\n\\n";
+  printf "\\tMysql installed succesfully!\\n\\n";
 fi
 
 ## installing php
@@ -66,7 +66,6 @@ else
     php-imagick  php7.2-gd php7.2-json php7.2-curl  php7.2-zip php7.2-xml \
     php7.2-mbstring php7.2-bz2 php7.2-intl -y > /dev/null 2>&1;  
   sudo service php7.2-fpm start;
-  sudo service php7.2-fpm enable;
   printf "\\tPhp installed succesuflly!\\n";
   
   printf "\\tTweaking php...\\n\\n"
@@ -91,18 +90,21 @@ fi
 # Install redis
 printf "Installing redis...\\n";
 if service --status-all | grep -Fq 'redis'; then
-  printf "redis is already installed\\n\\n";
+  printf "\\tRedis is already installed\\n\\n";
 else
   sudo apt install php-apcu redis-server php-redis -y > /dev/null 2>&1;
- sudo service redis start;
+  sudo service redis start;
+  printf "\\tRedis installed succesfully\\n\\n";
+
 fi
 
 ##########################
 ## INSTALLING NEXTCLOUD ##
 ##########################
+printf "Installing Nextcloud...\\n" 
 
 if [ -d $INSTALLATION_DIR ]; then
-  printf "Nextcloud is already installed\\n\\n"
+  printf "\\tNextcloud is already installed\\n\\n"
 # Control will enter here if $DIRECTORY exists.
 else
  # update nginx configuraton
@@ -155,7 +157,6 @@ cat >> $NEXTCLOUD_CONFIG/autoconfig.php <<EOF;
 ?>
 EOF
 
-
 echo "Starting automatic configuration..."
 # Execute ownCloud's setup step, which creates the ownCloud database.
 # It also wipes it if it exists. And it updates config.php with database
@@ -163,10 +164,27 @@ echo "Starting automatic configuration..."
 curl $HOSTNAME/index.php
 echo "Automatic configuration finished."
 
+printf "\\tCreating config file for Redis....\\n"
+cat >> $NEXTCLOUD_CONFIG/redis.config.php <<EOF;
+<?php
+\$CONFIG = array (
+  /**'memcache.local' => '\\OC\\Memcache\\APCu',                                                                                                                                       
+  'memcache.local' => '\\OC\\Memcache\\Redis',**/
+  'memcache.locking' => '\\OC\\Memcache\\Redis',                                                                                                                                            
+  'redis' =>                                                                                                                                                                                
+  array (                                                                                                                                                                                   
+    'host' => '/var/run/redis/redis-server.sock',                                                                                                                                           
+    'port' => 0,                                                                                                                                                                            
+  ), 
+);
+?>
+EOF
+
+
 # Put S3 config into it's own config file
-echo "Adding s3 to nextcloud..."
+printf "\\tAdding s3 to nextcloud..."
 if [[ ! -z "$DATASTORE_BUCKET"  ]]; then
-  cat >> /nextcloud/config/s3.config.php <<EOF;
+  cat >> $NEXTCLOUD_CONFIG/s3.config.php <<EOF;
 <?php
 \$CONFIG = array (
   # Setup S3 as a backend for primary storage
@@ -175,17 +193,13 @@ if [[ ! -z "$DATASTORE_BUCKET"  ]]; then
     'arguments' => array (
       'bucket' => '${DATASTORE_BUCKET}',
       'autocreate' => false,
-      'key' => '${DATASTORE_KEY}',
-      'secret' => '${DATASTORE_SECRET}',
-      'hostname' => '${DATASTORE_HOST}',
-      'port' => '${DATASTORE_PORT:-443}',
+      'key' => 'AKIA2JNTK7ECDQYEO26A',
+      'secret' => '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',
       'use_ssl' => true,
-      // required for some non amazon s3 implementations
-      'use_path_style' => %{DATASTORE_USE_PATH_STYLE},
     ),
   ),
 );
 ?>
 EOF
 fi
-
+printf "\\tDone, enjoy Nextcloud :)"
