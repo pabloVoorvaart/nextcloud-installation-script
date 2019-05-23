@@ -3,17 +3,20 @@
 #########################
 ##     VARIABLES       ##
 #########################
+# Fixed
 DB_NAME="nextcloud"
-DB_USER="admin"
-DB_PASSWORD="dwadawdwdadw"
 DB_TYPE="mysql"
-
 ADMIN_USER="admin"
-ADMIN_PASSWORD="pepitogrillo"
-
 INSTALLATION_DIR=/usr/share/nginx/nextcloud
 NGINX_CONFIG=/etc/nginx/conf.d/nextcloud.conf
 NEXTCLOUD_CONFIG=$INSTALLATION_DIR/config/
+
+# Random
+DB_USER=`head -c 10 /dev/random | base64`
+DB_PASSWORD=`head -c 10 /dev/random | base64`
+ADMIN_PASSWORD=`head -c 10 /dev/random | base64`
+
+# From EC2 tags
 HOSTNAME="localhost"
 DATASTORE_BUCKET="nextcloudev"
 
@@ -125,7 +128,7 @@ else
   sudo mkdir $INSTALLATION_DIR/data;
   sudo chown www-data:www-data $INSTALLATION_DIR/data -R;
   rm nextcloud-16.0.0.zip;
-fi
+
 
 # Create an auto-configuration file to fill in database settings
 # when the install script is run. Make an administrator account
@@ -157,12 +160,12 @@ cat >> $NEXTCLOUD_CONFIG/autoconfig.php <<EOF;
 ?>
 EOF
 
-echo "Starting automatic configuration..."
+printf "\\tStarting automatic configuration...\\n"
 # Execute ownCloud's setup step, which creates the ownCloud database.
 # It also wipes it if it exists. And it updates config.php with database
 # settings and deletes the autoconfig.php file.
 curl $HOSTNAME/index.php
-echo "Automatic configuration finished."
+printf "\\tAutomatic configuration finished.\\n\\n"
 
 printf "\\tCreating config file for Redis....\\n"
 cat >> $NEXTCLOUD_CONFIG/redis.config.php <<EOF;
@@ -182,7 +185,7 @@ EOF
 
 
 # Put S3 config into it's own config file
-printf "\\tAdding s3 to nextcloud..."
+printf "\\tAdding s3 to nextcloud...\\n"
 if [[ ! -z "$DATASTORE_BUCKET"  ]]; then
   cat >> $NEXTCLOUD_CONFIG/s3.config.php <<EOF;
 <?php
@@ -193,8 +196,8 @@ if [[ ! -z "$DATASTORE_BUCKET"  ]]; then
     'arguments' => array (
       'bucket' => '${DATASTORE_BUCKET}',
       'autocreate' => false,
-      'key' => 'AKIA2JNTK7ECDQYEO26A',
-      'secret' => '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',
+      'key' => '',
+      'secret' => '',
       'use_ssl' => true,
     ),
   ),
@@ -202,4 +205,8 @@ if [[ ! -z "$DATASTORE_BUCKET"  ]]; then
 ?>
 EOF
 fi
-printf "\\tDone, enjoy Nextcloud :)"
+
+fi
+printf "\\nDone, enjoy Nextcloud :)\\n\\n"
+printf "to access use Admin and " 
+echo $ADMIN_PASSWORD
